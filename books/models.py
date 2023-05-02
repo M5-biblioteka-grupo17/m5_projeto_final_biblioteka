@@ -9,4 +9,4 @@ class Book(models.Model):
     category = models.CharField(max_length=50)
     summary = models.TextField(null=True)
 
-    users = models.ManyToManyField(User, related_name="books")
+    following = models.ManyToManyField("users.User", related_name="followed_books")
