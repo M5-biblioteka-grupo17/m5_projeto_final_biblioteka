@@ -4,9 +4,8 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        return (User.objects.create_superuser(**validated_data) if validated_data["library_collaborator"]
-               else User.objects.create_user(**validated_data))
+    def create(self, validated_data: User):
+            return User.objects.create_user(**validated_data)
     
     def update(self, instance:User, validated_data:dict):
         for key, value in validated_data.items():
@@ -16,6 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
                 setattr(instance, key, value)
 
         instance.save()   
+        return instance
 
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
@@ -24,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
         model=User
         fields=[
             "id",
-            "usernames",
+            "username",
             "email",
             "password",
             "first_name",
@@ -35,5 +35,6 @@ class UserSerializer(serializers.ModelSerializer):
             "have_permission"
         ]
         extra_kwargs={
-            "password":{"write_only": True}
+            "password":{"write_only": True},
+            "have_permission":{"read_only": True}
         }
