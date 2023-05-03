@@ -5,24 +5,25 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data: User):
-            return User.objects.create_user(**validated_data)
-    
-    def update(self, instance:User, validated_data:dict):
+        return User.objects.create_user(**validated_data)
+
+    def update(self, instance: User, validated_data: dict):
         for key, value in validated_data.items():
-            if key== "password":
+            if key == "password":
                 instance.set_password(value)
             else:
                 setattr(instance, key, value)
 
-        instance.save()   
+        instance.save()
         return instance
 
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
-    )        
+    )
+
     class Meta:
-        model=User
-        fields=[
+        model = User
+        fields = [
             "id",
             "username",
             "email",
@@ -34,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             "library_collaborator",
             "have_permission"
         ]
-        extra_kwargs={
-            "password":{"write_only": True},
-            "have_permission":{"read_only": True}
+        extra_kwargs = {
+            "password": {"write_only": True},
+            "have_permission": {"read_only": True}
         }
