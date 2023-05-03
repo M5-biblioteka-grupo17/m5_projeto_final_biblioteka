@@ -28,7 +28,7 @@ class CopySerializer(serializers.ModelSerializer):
         model = Copy
         fields = ["id", "book_id", "amount", "available", "reserved_copy"]
 
-class loanSerializer(serializers.ModelSerializer):
+class LoanSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     class Meta:
         model = Loan

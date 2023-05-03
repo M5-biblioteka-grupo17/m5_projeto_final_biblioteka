@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView, ListAPIView
+
+from users.models import User
 from .models import Copy, Loan
-from .serializers import CopySerializer
+from .serializers import CopySerializer, LoanSerializer
 from django.shortcuts import get_object_or_404
 from books.models import Book
 from .permissions import isCollaboratorOrGet
@@ -35,7 +37,7 @@ class LoanView(CreateAPIView):
 
     def get_queryset(self):
         return Loan.objects.filter(user=self.request.user)
-    serializer_class = CopySerializer
+    serializer_class = LoanSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -85,4 +87,21 @@ class LoanReturnView(UpdateAPIView):
     
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
+
+class LoanHistoricUserView(ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Loan.objects.filter(user=self.request.user)
+    serializer_class = LoanSerializer
+
+class LoanHistoricAllUserCollaboratorView(ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = get_object_or_404(User, pk=self.kwargs["pk"])
+        return Loan.objects.filter(user=user)
+    serializer_class = LoanSerializer
 # Create your views here.
