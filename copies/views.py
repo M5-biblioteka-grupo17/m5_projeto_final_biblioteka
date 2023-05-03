@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView
 from .models import Copy, Loan
 from .serializers import CopySerializer
 from django.shortcuts import get_object_or_404
@@ -76,4 +76,13 @@ class LoanView(CreateAPIView):
         
         serializer.save(user=self.request.user, copy=copy, return_date=return_date)
 
+class LoanReturnView(UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    queryset = Loan.objects.all()
+    serializer_class = CopySerializer
+    
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
 # Create your views here.
