@@ -7,13 +7,15 @@ from .permissions import IsLibraryCollaboratorOrOwner
 
 # Create your views here.
 
+
 class UserView(generics.ListCreateAPIView):
-    queryset=User.objects.all()
-    serializer_class=UserSerializer
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsLibraryCollaboratorOrOwner]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsLibraryCollaboratorOrOwner]
 
-    queryset=User.objects.all()
-    serializer_class=UserSerializer
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
