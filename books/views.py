@@ -3,11 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.conf import settings
 
 from .models import Book
 from .serializers import BookSerializer
 from .permissions import IsAdminOrReadOnly
+
+from copies.models import Copy
 
 
 class BookView(ListCreateAPIView):
@@ -21,6 +26,9 @@ class BookView(ListCreateAPIView):
 class BookDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class BookFollowView(CreateAPIView):
@@ -36,6 +44,21 @@ class BookFollowView(CreateAPIView):
 
         book = get_object_or_404(Book, pk=book_id)
         book.following.add(user)
+
+        copy = Copy.objects.filter(book=book)
+
+        if copy[0].available:
+            message = "Este livro está disponível para empréstimo"
+        else:
+            message = "Este livro não está disponível para empréstimo"
+
+        send_mail(
+            subject='Disponibilidade do livro na biblioteka',
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email],
+            fail_silently=False
+        )
 
         return Response(status=status.HTTP_201_CREATED)
 
