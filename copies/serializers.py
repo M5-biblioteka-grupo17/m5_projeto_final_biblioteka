@@ -3,8 +3,6 @@ from rest_framework.validators import UniqueValidator
 
 from users.models import User
 from .models import Copy
-from books.models import Book
-from django.forms.models import model_to_dict
 from users.serializers import UserSerializer
 from .models import Loan
 
@@ -17,16 +15,11 @@ class CopySerializer(serializers.ModelSerializer):
             )
         ]
     )
-    book = serializers.SerializerMethodField(read_only=True)
-
-    def get_book(self, obj):
-        book = Book.objects.get(id=obj.books_id)
-        found_book = model_to_dict(book)
-        return found_book
     
     class Meta:
         model = Copy
         fields = ["id", "book_id", "amount", "available", "reserved_copy"]
+        read_only_fields = ["reserved_copy", "available"]
 
 class LoanSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

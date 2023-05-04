@@ -6,7 +6,7 @@ from .models import Copy, Loan
 from .serializers import CopySerializer, LoanSerializer
 from django.shortcuts import get_object_or_404
 from books.models import Book
-from .permissions import isCollaboratorOrGet
+from .permissions import isCollaborator, isCollaboratorOrGet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 import datetime
@@ -19,10 +19,6 @@ class CopiesView(ListCreateAPIView):
 
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
-
-    def perform_create(self, serializer):
-        book = get_object_or_404(Book, pk=self.request.data["book_id"])
-        serializer.save(book)
 
 class CopiesDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
@@ -56,7 +52,7 @@ class LoanView(CreateAPIView):
 
         copy.reserved_copy += 1
 
-        if copy.reserved_copy == copy.amount:
+        if copy.reserved_copy > copy.amount:
             copy.available = False
         
         if copy.available == False:
@@ -69,7 +65,7 @@ class LoanView(CreateAPIView):
         
         copy.save()
 
-        return_date = datetime.datetime.now() + datetime.timedelta(days=1)
+        return_date = datetime.datetime.now() + datetime.timedelta(seconds=10)
 
         if return_date.strftime("%a") == "Sat":
             return_date = return_date + datetime.timedelta(days=2)
@@ -98,7 +94,7 @@ class LoanHistoricUserView(ListAPIView):
 
 class LoanHistoricAllUserCollaboratorView(ListAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [isCollaborator]
 
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs["pk"])
