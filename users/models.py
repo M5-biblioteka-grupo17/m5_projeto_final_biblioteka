@@ -9,4 +9,4 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     library_collaborator = models.BooleanField(default=False)
-    have_permission = models.BooleanField(default=True)
+    have_permission = models.DateField(default=None, blank=True, null=True)
