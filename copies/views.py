@@ -9,22 +9,35 @@ from books.models import Book
 from .permissions import isCollaborator, isCollaboratorOrGet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-import datetime
+from datetime import date, timedelta
 from rest_framework.views import Response, status
 
 
-class CopiesView(ListCreateAPIView):
+class CopiesView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaboratorOrGet]
 
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
 
+    def perform_create(self, serializer):
+        book = get_object_or_404(Book, pk=self.request.data["book_id"])
+        serializer.save(book=book)
+
 class CopiesDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaboratorOrGet]
     
     queryset = Copy.objects.all()
+    serializer_class = CopySerializer
+
+class CopiesListByBookView(ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [isCollaboratorOrGet]
+
+    def get_queryset(self):
+        book = get_object_or_404(Book, pk=self.kwargs["pk"])
+        return Copy.objects.filter(book=book)
     serializer_class = CopySerializer
 
 class LoanView(CreateAPIView):
@@ -38,48 +51,36 @@ class LoanView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if request.user.have_permission is not None and request.user.have_permission > date.today():
+            return Response({"message": f"User still blocked until {request.user.have_permission}!"}, status.HTTP_403_FORBIDDEN)
         try:
             self.perform_create(serializer)
         except ReferenceError:
-            return Response({"message": "No copies available for this book!"}, status.HTTP_400_BAD_REQUEST)
-        except PermissionError:
-            return Response({"message": "The user has not return the book!"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Copy unavailable for loan!"}, status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.data, status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         copy = get_object_or_404(Copy, pk=self.kwargs["pk"])
-
-        copy.reserved_copy += 1
-
-        if copy.reserved_copy > copy.amount:
-            copy.available = False
-        
         if copy.available == False:
-            raise ReferenceError("No copies available for this book!")
-        
-        if Loan.objects.filter(user=self.request.user, return_date=datetime.datetime.now(), is_returned=False).count() > 0 or self.request.user.have_permission == False:
-            self.request.user.have_permission = False
-            self.request.user.save()
-            raise PermissionError("The user has not return the book!")
-        
+            raise ReferenceError("Copy unavailable for loan!")
+        copy.available = False
         copy.save()
-
-        return_date = datetime.datetime.now() + datetime.timedelta(seconds=10)
-
-        if return_date.strftime("%a") == "Sat":
-            return_date = return_date + datetime.timedelta(days=2)
-        if return_date.strftime("%a") == "Sun":
-            return_date = return_date + datetime.timedelta(days=1)
-        
-        serializer.save(user=self.request.user, copy=copy, return_date=return_date)
+      
+        serializer.save(user=self.request.user, copy=copy)
 
 class LoanReturnView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     queryset = Loan.objects.all()
-    serializer_class = CopySerializer
+    serializer_class = LoanSerializer
+
+    def patch(self, request, *args, **kwargs):
+        loan = get_object_or_404(Loan.objects.all(), id=kwargs["pk"])
+        if loan.copy.available:
+            return Response({"message": "Copy has already been returned!"}, status.HTTP_409_CONFLICT)
+        return super().patch(request, *args, **kwargs)
     
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
