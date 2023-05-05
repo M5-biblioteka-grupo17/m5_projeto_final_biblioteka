@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,16 +50,9 @@ DJANGO_APPS = [
     "django.contrib.staticfiles",
 ]
 
-THIRD_PARTY_APPS = [
-    "rest_framework",
-    # 'drf_spectacular'
-]
+THIRD_PARTY_APPS = ["rest_framework", "drf_spectacular"]
 
-MY_APPS = [
-    "users",
-    "books",
-    "copies"
-]
+MY_APPS = ["users", "books", "copies"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + MY_APPS
 
@@ -105,18 +98,18 @@ DATABASES = {
         "USER": os.getenv("POSTGRES_USERNAME"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
         "HOST": os.getenv("POSTGRES_DB_HOST"),
-        "PORT": os.getenv("POSTGRES_DB_PORT")
+        "PORT": os.getenv("POSTGRES_DB_PORT"),
     }
 }
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
     db_from_env = dj_database_url.config(
         default=DATABASE_URL, conn_max_age=500, ssl_require=True
     )
 
-    DATABASES['default'].update(db_from_env)
+    DATABASES["default"].update(db_from_env)
     DEBUG = False
 
 if not DEBUG:
@@ -150,9 +143,15 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 5,
-    # "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "BiblioteKA",
+    "DESCRIPTION": "API para BiblioteKA",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -178,9 +177,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = os.getenv('EMAIL_PORT')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
