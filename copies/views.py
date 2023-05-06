@@ -42,10 +42,11 @@ class CopiesListByBookView(ListAPIView):
 
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [isCollaborator]
 
     def get_queryset(self):
-        return Loan.objects.filter(user=self.request.user)
+        user = get_object_or_404(User, id=self.kwargs["id"])
+        return Loan.objects.filter(user=user)
     serializer_class = LoanSerializer
 
     def create(self, request, *args, **kwargs):
@@ -61,13 +62,15 @@ class LoanView(CreateAPIView):
         return Response(serializer.data, status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
+        user = get_object_or_404(User, id=self.kwargs["id"])
+        user.save()
         copy = get_object_or_404(Copy, pk=self.kwargs["pk"])
         if copy.available == False:
             raise ReferenceError("Copy unavailable for loan!")
         copy.available = False
         copy.save()
-      
-        serializer.save(user=self.request.user, copy=copy)
+
+        serializer.save(user=user, copy=copy)
 
 class LoanReturnView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
