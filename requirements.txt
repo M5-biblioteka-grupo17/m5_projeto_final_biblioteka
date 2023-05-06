@@ -13,7 +13,6 @@ djangorestframework-simplejwt==5.2.2
 executing==1.2.0
 gunicorn==20.1.0
 ipdb==0.13.13
-ipython==8.13.1
 jedi==0.18.2
 matplotlib-inline==0.1.6
 mypy-extensions==1.0.0
