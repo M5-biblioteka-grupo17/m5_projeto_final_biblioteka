@@ -1,19 +1,16 @@
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView, ListAPIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import Response, status
-
-from drf_spectacular.utils import extend_schema
-
-from django.shortcuts import get_object_or_404
-from datetime import date
-
-from .models import Copy, Loan
-from .serializers import CopySerializer, LoanSerializer
-from .permissions import isCollaborator, isCollaboratorOrGet
+from django.shortcuts import render
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView, ListAPIView
 
 from users.models import User
+from .models import Copy, Loan
+from .serializers import CopySerializer, LoanSerializer
+from django.shortcuts import get_object_or_404
 from books.models import Book
+from .permissions import isCollaborator, isCollaboratorOrGet
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from datetime import date, timedelta
+from rest_framework.views import Response, status
 
 
 class CopiesView(CreateAPIView):
@@ -27,20 +24,12 @@ class CopiesView(CreateAPIView):
         book = get_object_or_404(Book, pk=self.request.data["book_id"])
         serializer.save(book=book)
 
-
 class CopiesDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaboratorOrGet]
     
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
-
-    @extend_schema(
-        exclude=True
-    )
-    def put(self, request, *args, **kwargs):
-        return super().put(request, *args, **kwargs)
-
 
 class CopiesListByBookView(ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -50,7 +39,6 @@ class CopiesListByBookView(ListAPIView):
         book = get_object_or_404(Book, pk=self.kwargs["pk"])
         return Copy.objects.filter(book=book)
     serializer_class = CopySerializer
-
 
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
@@ -84,7 +72,6 @@ class LoanView(CreateAPIView):
 
         serializer.save(user=user, copy=copy)
 
-
 class LoanReturnView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -93,20 +80,13 @@ class LoanReturnView(UpdateAPIView):
     serializer_class = LoanSerializer
 
     def patch(self, request, *args, **kwargs):
-        loan = get_object_or_404(Loan.objects.all(), id=kwargs["pk"])
-        if loan.copy.available:
+        loan = get_object_or_404(Loan, pk=self.kwargs["pk"])
+        if loan.is_returned:
             return Response({"message": "Copy has already been returned!"}, status.HTTP_409_CONFLICT)
         return super().patch(request, *args, **kwargs)
     
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
-
-    @extend_schema(
-        exclude=True
-    )
-    def put(self, request, *args, **kwargs):
-        return super().put(request, *args, **kwargs)
-
 
 class LoanHistoricUserView(ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -115,7 +95,6 @@ class LoanHistoricUserView(ListAPIView):
     def get_queryset(self):
         return Loan.objects.filter(user=self.request.user)
     serializer_class = LoanSerializer
-
 
 class LoanHistoricAllUserCollaboratorView(ListAPIView):
     authentication_classes = [JWTAuthentication]
