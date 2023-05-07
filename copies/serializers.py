@@ -8,6 +8,7 @@ from .models import Loan
 from datetime import date, timedelta
 
 class CopySerializer(serializers.ModelSerializer):
+    book_id = serializers.IntegerField()
     class Meta:
         model = Copy
         fields = ["id", "book_id", "available"]
