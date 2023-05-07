@@ -1,16 +1,19 @@
-from django.shortcuts import render
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView, ListAPIView
-
-from users.models import User
-from .models import Copy, Loan
-from .serializers import CopySerializer, LoanSerializer
-from django.shortcuts import get_object_or_404
-from books.models import Book
-from .permissions import isCollaborator, isCollaboratorOrGet
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from datetime import date, timedelta
 from rest_framework.views import Response, status
+
+from drf_spectacular.utils import extend_schema
+
+from django.shortcuts import get_object_or_404
+from datetime import date
+
+from .models import Copy, Loan
+from .serializers import CopySerializer, LoanSerializer
+from .permissions import isCollaborator, isCollaboratorOrGet
+
+from users.models import User
+from books.models import Book
 
 
 class CopiesView(CreateAPIView):
@@ -24,12 +27,20 @@ class CopiesView(CreateAPIView):
         book = get_object_or_404(Book, pk=self.request.data["book_id"])
         serializer.save(book=book)
 
+
 class CopiesDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaboratorOrGet]
     
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
+
+    @extend_schema(
+        exclude=True
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
 
 class CopiesListByBookView(ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -40,12 +51,14 @@ class CopiesListByBookView(ListAPIView):
         return Copy.objects.filter(book=book)
     serializer_class = CopySerializer
 
+
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [isCollaborator]
 
     def get_queryset(self):
-        return Loan.objects.filter(user=self.request.user)
+        user = get_object_or_404(User, id=self.kwargs["id"])
+        return Loan.objects.filter(user=user)
     serializer_class = LoanSerializer
 
     def create(self, request, *args, **kwargs):
@@ -61,13 +74,16 @@ class LoanView(CreateAPIView):
         return Response(serializer.data, status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
+        user = get_object_or_404(User, id=self.kwargs["id"])
+        user.save()
         copy = get_object_or_404(Copy, pk=self.kwargs["pk"])
         if copy.available == False:
             raise ReferenceError("Copy unavailable for loan!")
         copy.available = False
         copy.save()
-      
-        serializer.save(user=self.request.user, copy=copy)
+
+        serializer.save(user=user, copy=copy)
+
 
 class LoanReturnView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
@@ -85,6 +101,13 @@ class LoanReturnView(UpdateAPIView):
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
 
+    @extend_schema(
+        exclude=True
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+
 class LoanHistoricUserView(ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -92,6 +115,7 @@ class LoanHistoricUserView(ListAPIView):
     def get_queryset(self):
         return Loan.objects.filter(user=self.request.user)
     serializer_class = LoanSerializer
+
 
 class LoanHistoricAllUserCollaboratorView(ListAPIView):
     authentication_classes = [JWTAuthentication]
