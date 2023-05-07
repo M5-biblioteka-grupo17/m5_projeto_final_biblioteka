@@ -1,11 +1,11 @@
-from django.shortcuts import render
 from rest_framework import generics
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from drf_spectacular.utils import extend_schema
+
 from .models import User
 from .serializers import UserSerializer
 from .permissions import IsLibraryCollaboratorOrOwner
-
-# Create your views here.
 
 
 class UserView(generics.ListCreateAPIView):
@@ -19,3 +19,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    @extend_schema(
+        exclude=True
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)

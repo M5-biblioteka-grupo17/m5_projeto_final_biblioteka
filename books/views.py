@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from drf_spectacular.utils import extend_schema
+
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
@@ -30,6 +32,12 @@ class BookDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
+    @extend_schema(
+        exclude=True
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
 
 class BookFollowView(CreateAPIView):
     queryset = Book.objects.all()
@@ -47,7 +55,7 @@ class BookFollowView(CreateAPIView):
 
         copy = Copy.objects.filter(book=book)
 
-        if copy[0].available:
+        if copy and copy[0].available:
             message = "Este livro está disponível para empréstimo"
         else:
             message = "Este livro não está disponível para empréstimo"
