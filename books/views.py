@@ -55,7 +55,7 @@ class BookFollowView(CreateAPIView):
 
         copy = Copy.objects.filter(book=book)
 
-        if copy[0].available:
+        if copy and copy[0].available:
             message = "Este livro está disponível para empréstimo"
         else:
             message = "Este livro não está disponível para empréstimo"
