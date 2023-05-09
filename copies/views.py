@@ -45,27 +45,30 @@ class CopiesDetailView(RetrieveUpdateDestroyAPIView):
 class CopiesListByBookView(ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaboratorOrGet]
+    serializer_class = CopySerializer
 
     def get_queryset(self):
         book = get_object_or_404(Book, pk=self.kwargs["pk"])
         return Copy.objects.filter(book=book)
-    serializer_class = CopySerializer
 
 
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [isCollaborator]
+    serializer_class = LoanSerializer
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs["id"])
+
         return Loan.objects.filter(user=user)
-    serializer_class = LoanSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         if request.user.have_permission is not None and request.user.have_permission > date.today():
             return Response({"message": f"User still blocked until {request.user.have_permission}!"}, status.HTTP_403_FORBIDDEN)
+        
         try:
             self.perform_create(serializer)
         except ReferenceError:
@@ -97,7 +100,7 @@ class LoanReturnView(UpdateAPIView):
         if loan.copy.available:
             return Response({"message": "Copy has already been returned!"}, status.HTTP_409_CONFLICT)
         return super().patch(request, *args, **kwargs)
-    
+
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -125,4 +128,3 @@ class LoanHistoricAllUserCollaboratorView(ListAPIView):
         user = get_object_or_404(User, pk=self.kwargs["pk"])
         return Loan.objects.filter(user=user)
     serializer_class = LoanSerializer
-# Create your views here.
